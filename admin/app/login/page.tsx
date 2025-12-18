@@ -22,6 +22,10 @@ export default function LoginPage() {
       
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken);
+
+        if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);}
+
         localStorage.setItem('user', JSON.stringify(data.user));
         window.location.href = '/';
       } else {
@@ -33,7 +37,7 @@ export default function LoginPage() {
       if (err.status === 401) {
         setError('Неверный email или пароль');
       } else if (err.message.includes('Failed to fetch')) {
-        setError('Не удалось подключиться к серверу');
+        setError('Не удалось подключиться к серверу. Проверьте, запущен ли бэк');
       } else {
         setError(err.message || 'Ошибка входа');
       }

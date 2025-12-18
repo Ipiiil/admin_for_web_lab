@@ -74,7 +74,14 @@ export default function RegisterPage() {
       
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken);
-        localStorage.setItem('user', JSON.stringify(data.user));
+
+        if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);}
+
+        localStorage.setItem('user', JSON.stringify(data.user || { 
+          email: form.email, 
+          name: form.name 
+        }));
         setSuccess(true);
         
         // Редирект через 2 секунды
@@ -84,8 +91,8 @@ export default function RegisterPage() {
       } else {
         throw new Error('Нет токена в ответе от сервера');
       }
-    // app/register/page.tsx - ИСПРАВЛЕННЫЙ БЛОК CATCH
-} catch (err: unknown) {
+
+} catch (err: any) {
   console.error('Raw error object:', err);
   console.error('Error type:', typeof err);
   

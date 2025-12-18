@@ -18,6 +18,7 @@ export default function RootLayout({
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken')
       const isLoginPage = pathname === '/login';
       const isRegisterPage = pathname === '/register';
       const isPublicPage = isLoginPage || isRegisterPage;
@@ -43,13 +44,11 @@ export default function RootLayout({
           const userData = JSON.parse(localStorage.getItem('user') || '{}');
           setUser(userData);
           
-          // Можно также проверить токен через апи, если есть эндпоинт
-          // await api.getWithAuth('/api/auth/verify');
-          
           setIsAuthenticated(true);
         } catch (error) {
           // Токен невалидный
           localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
           setIsAuthenticated(false);
           
@@ -126,10 +125,14 @@ export default function RootLayout({
 
 // Обновленный Header компонент
 function Header({ user }: { user: any }) {
+  const router = useRouter();
+
   const handleLogout = () => {
+    // удаляем все токены
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    router.push('/login');
   };
 
   const navItems = [

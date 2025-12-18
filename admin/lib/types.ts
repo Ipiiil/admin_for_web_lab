@@ -72,8 +72,16 @@ export interface RegisterRequest {
   name?: string;
 }
 
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user?: User;
+}
+export interface RegisterResponse extends LoginResponse {}
+
 export interface RefreshResponse {
   accessToken: string;
+  refreshToken: string;
 }
 
 export interface UsersApiResponse {
