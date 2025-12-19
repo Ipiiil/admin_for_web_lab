@@ -150,7 +150,7 @@ export const api = {
   },
 
   async updateUser(id: string, data: any): Promise<any> {
-    return this.request(`/api/admin/users/${id}`, {
+    return this.request(`/api/admin/users/${id}/role`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -162,26 +162,26 @@ export const api = {
 
   // === КАТЕГОРИИ ===
   async getCategories(): Promise<any[]> {
-    const response = await this.request('/api/categories');
+    const response = await this.request('/api/admin/categories');
     return Array.isArray(response) ? response : [];
   },
 
   async createCategory(data: { name: string; description?: string }): Promise<any> {
-    return this.request('/api/categories', {
+    return this.request('/api/admin/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   async updateCategory(id: string, data: any): Promise<any> {
-    return this.request(`/api/categories/${id}`, {
+    return this.request(`/api//admin/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
   async deleteCategory(id: string): Promise<void> {
-    await this.request(`/api/categories/${id}`, { method: 'DELETE' });
+    await this.request(`/api/admin/categories/${id}`, { method: 'DELETE' });
   },
 
   // === РАСХОДЫ ===
