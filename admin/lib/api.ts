@@ -15,11 +15,14 @@ class ApiError extends Error {
 
 // Базовые функции API
 export const api = {
-  // Авторизация - ИСПРАВЛЕННЫЙ ПУТЬ
+  // Авторизация
   async login(email: string, password: string): Promise<any> {
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ email, password }),
     });
     
@@ -28,14 +31,29 @@ export const api = {
       throw new ApiError(errorData.message || 'Ошибка авторизации', response.status, errorData);
     }
     
-    return response.json();
+    
+    
+    const data = await response.json();
+    
+    // Добавляем user объект если его нет в ответе
+    return {
+      ...data,
+      user: data.user || {
+        email: email,
+        name: email.split('@')[0] || 'Пользователь',
+        role: 'user'
+      }
+    };
   },
 
-  // Регистрация - ИСПРАВЛЕННЫЙ ПУТЬ
+  // Регистрация
   async register(email: string, password: string, name: string): Promise<any> {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ email, password, name }),
     });
     
@@ -44,21 +62,24 @@ export const api = {
       throw new ApiError(errorData.message || 'Ошибка регистрации', response.status, errorData);
     }
     
-    return response.json();
+    const data = await response.json();
+    
+    // Добавляем user объект если его нет в ответе
+    return {
+      ...data,
+      user: data.user || {
+        email: email,
+        name: name,
+        role: 'user'
+      }
+    };
   },
 
-  // Обновление токена - НОВАЯ ЛОГИКА
-  async refresh(): Promise<{ accessToken: string; refreshToken: string }> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    
-    if (!refreshToken) {
-      throw new ApiError('Нет refresh токена', 401);
-    }
-    
+  // Обновление токена 
+  async refresh(): Promise<{ accessToken: string }> {
     const response = await fetch(`${API_URL}/api/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -69,10 +90,7 @@ export const api = {
   },
 
   // Универсальный метод запроса с авто-обновлением токена
-  async request<T = any>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
+  async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = localStorage.getItem('token');
     
     const headers = {
@@ -90,66 +108,34 @@ export const api = {
     if (response.status === 401) {
       try {
         const newTokens = await this.refresh();
-        
-        // Сохраняем новые токены
         localStorage.setItem('token', newTokens.accessToken);
-        localStorage.setItem('refreshToken', newTokens.refreshToken);
         
-        // Повторяем запрос с новым токеном
-        headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
-        const retryResponse = await fetch(`${API_URL}${endpoint}`, {
-          ...options,
-          headers,
-        });
-        
-        if (!retryResponse.ok) {
-          const errorData = await retryResponse.json().catch(() => ({}));
-          throw new ApiError(errorData.message || 'Ошибка запроса', retryResponse.status, errorData);
-        }
-        
-        // Если ответ пустой (например, для DELETE)
-        if (retryResponse.status === 204 || retryResponse.headers.get('content-length') === '0') {
-          return {} as T;
-        }
-        
-        return retryResponse.json();
-        
+        return this.request(endpoint, options);
       } catch (refreshError) {
-        // Если не удалось обновить - разлогиниваем
         localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        
-        throw new ApiError('Сессия истекла. Пожалуйста, войдите снова.', 401);
+        window.location.href = '/login';
+        throw new ApiError('Сессия истекла', 401);
       }
     }
     
     if (!response.ok) {
-      let errorData: any = {};
-      try {
-        errorData = await response.json();
-      } catch {
-        // ignore
-      }
+      const errorData = await response.json().catch(() => ({}));
       throw new ApiError(errorData.message || 'Ошибка запроса', response.status, errorData);
     }
-    
-    // Если ответ пустой (например, для DELETE)
+        
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       return {} as T;
     }
     
     return response.json();
   },
+       
 
   // === ПОЛЬЗОВАТЕЛИ ===
   async getUsers(): Promise<any[]> {
     const response = await this.request('/api/admin/users');
-    return Array.isArray(response) ? response : [];
+    return Array.isArray(response) ? response : response?.users || response?.data || [];
   },
 
   async getUser(id: string): Promise<any> {
