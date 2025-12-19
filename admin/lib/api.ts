@@ -128,6 +128,14 @@ export const api = {
       return {} as T;
     }
     
+    // Проверяем Content-Type
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      // Если не JSON - возвращаем текст или пустой объект
+      const text = await response.text();
+      return (text ? JSON.parse(text) : {}) as T;
+    }
+
     return response.json();
   },
        
