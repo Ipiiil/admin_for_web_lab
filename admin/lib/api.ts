@@ -174,7 +174,7 @@ export const api = {
   },
 
   async updateCategory(id: string, data: any): Promise<any> {
-    return this.request(`/api//admin/categories/${id}`, {
+    return this.request(`/api/admin/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
